@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ اردوگاه قهرمانان</title>
+    <style>
+        body { font-family: Tahoma; background: #1a1a2e; color: white; display: flex; justify-content: center; padding: 50px; }
+        .container { background: #16213e; padding: 30px; border-radius: 20px; width: 450px; box-shadow: 0 0 30px #0f3460; }
+        h1 { text-align: center; color: #e94560; }
+        input { width: 90%; padding: 10px; margin: 8px 0; border-radius: 10px; border: none; }
+        button { width: 100%; padding: 12px; background: #e94560; color: white; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        button:hover { background: #c73652; }
+        #message { background: #0f3460; padding: 10px; border-radius: 10px; margin: 15px 0; text-align: center; }
+        .hero-list { background: #0f3460; padding: 15px; border-radius: 10px; margin-top: 20px; max-height: 300px; overflow-y: auto; }
+        .hero-item { background: #1a1a2e; padding: 8px 15px; margin: 5px 0; border-radius: 8px; display: flex; justify-content: space-between; }
+        .power-badge { background: #e94560; padding: 2px 12px; border-radius: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ ثبت قهرمان جدید</h1>
+        
+        <form id="heroForm">
+            <input type="text" id="heroName" placeholder="اسم قهرمان (مثلاً: آیرون من)" required>
+            <input type="number" id="heroPower" placeholder="سطح قدرت (۱ تا ۱۰۰)" min="1" max="100" required>
+            <button type="submit">🚀 اضافه کردن به اردوگاه</button>
+        </form>
+
+        <div id="message">✅ آماده ثبت‌نام!</div>
+
+        <div class="hero-list" id="heroList">
+            <div style="text-align:center; color: #aaa;">📋 لیست قهرمان‌ها اینجا نمایش داده می‌شه...</div>
+        </div>
+    </div>
+
+    <script>
+        // تابع برای دریافت و نمایش لیست قهرمان‌ها
+        async function loadHeroes() {
+            try {
+                const res = await fetch('/heros');
+                const heroes = await res.json();
+                const listDiv = document.getElementById('heroList');
+                
+                if (heroes.length === 0) {
+                    listDiv.innerHTML = '<div style="text-align:center; color: #aaa;">😔 هنوز قهرمانی ثبت نشده!</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = heroes.map(h => `
+                    <div class="hero-item">
+                        <span>🦸 ${h.user}</span>
+                        <span class="power-badge">⚡ قدرت: ${h.power}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('خطا در گرفتن لیست', error);
+            }
+        }
+
+        // وقتی صفحه باز میشه، لیست رو نشون بده
+        loadHeroes();
+
+        // ثبت قهرمان جدید
+        document.getElementById('heroForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('heroName').value.trim();
+            const power = document.getElementById('heroPower').value;
+
+            try {
+                const response = await fetch('/add-hero', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, power })
+                });
+
+                const result = await response.json();
+                document.getElementById('message').innerHTML = result.message;
+                document.getElementById('message').style.background = response.ok ? '#1b5e20' : '#b71c1c';
+
+                // اگر موفق بود، فرم رو پاک کن و لیست رو دوباره بارگذاری کن
+                if (response.ok) {
+                    document.getElementById('heroName').value = '';
+                    document.getElementById('heroPower').value = '';
+                    loadHeroes(); // لیست رو آپدیت کن
+                }
+            } catch (error) {
+                document.getElementById('message').innerHTML = '❌ خطا در ارتباط با سرور!';
+            }
+        });
+    </script>
+</body>
+</html>
